@@ -51,7 +51,7 @@ class DynamicTfCamPublisher(Node):
         
 
         # Call on_timer function every second
-        self.timer = self.create_timer(1.0, self.on_timer)
+        self.timer = self.create_timer(0.05, self.on_timer)
 
     def on_timer(self):
         try:
@@ -63,7 +63,7 @@ class DynamicTfCamPublisher(Node):
             # self.get_logger().info('error getting robot position')
             return
 
-        # self.get_logger().info('got position')
+        self.get_logger().info('got position')
         leftcam_to_robot = np.array([
             [1, 0, 0, -0.05],
             [0, 1, 0, 0],

@@ -34,48 +34,58 @@ def quaternion_from_euler(ai, aj, ak):
     return q
 
 class StaticTfCamPublisher(Node):
-    def __init__(self):
+    def __init__(self, transformation):
         super().__init__('static_tf_cam_publisher')
         
         self.tf_static_broadcaster = StaticTransformBroadcaster(self)
 
-        left_to_world = ['left_cam', -0.05, 0, 0, 0, 0, 0]
-        right_to_left = ['right_cam', 0.1, 0, 0, 0, 0, 0]
+        
 
         # Publish static transforms once at startup
-        self.make_transforms(left_to_world)
-        self.make_transforms(right_to_left)
+        self.make_transforms([transformation, ["left_cam", 'right_cam', 0.1, 0, 0, 0, 0, 0]])
+        # self.make_transforms(["left_cam", 'right_cam', 0.1, 0, 0, 0, 0, 0])
+        # self.make_transforms(right_to_left)
 
-    def make_transforms(self, transformation):
-        t = TransformStamped()
+    def make_transforms(self, transformations):
+        ts = []
+        for transformation in transformations:
+            t = TransformStamped()
 
-        t.header.stamp = self.get_clock().now().to_msg()
-        t.header.frame_id = 'base_link_gt'
-        t.child_frame_id = transformation[1]
+            t.header.stamp = self.get_clock().now().to_msg()
+            t.header.frame_id = transformation[0]
+            t.child_frame_id = transformation[1]
 
-        t.transform.translation.x = float(transformation[2])
-        t.transform.translation.y = float(transformation[3])
-        t.transform.translation.z = float(transformation[4])
-        quat = quaternion_from_euler(
-            float(transformation[5]), float(transformation[6]), float(transformation[7]))
-        t.transform.rotation.x = quat[0]
-        t.transform.rotation.y = quat[1]
-        t.transform.rotation.z = quat[2]
-        t.transform.rotation.w = quat[3]
+            t.transform.translation.x = float(transformation[2])
+            t.transform.translation.y = float(transformation[3])
+            t.transform.translation.z = float(transformation[4])
+            quat = quaternion_from_euler(
+                float(transformation[5]), float(transformation[6]), float(transformation[7]))
+            t.transform.rotation.x = quat[0]
+            t.transform.rotation.y = quat[1]
+            t.transform.rotation.z = quat[2]
+            t.transform.rotation.w = quat[3]
 
-        self.tf_static_broadcaster.sendTransform(t)
+            ts.append(t)
+
+        self.tf_static_broadcaster.sendTransform(ts)
 
 def main(args=None):
     rclpy.init(args=args)
 
-    static_publisher = StaticTfCamPublisher()
+    left_to_world = ["base_link_gt", 'left_cam', -0.05, 0, 0, 0, 0, 0]
+    right_to_left = ["left_cam", 'right_cam', 0.1, 0, 0, 0, 0, 0]
 
-    rclpy.spin(static_publisher)
+    left_static_publisher = StaticTfCamPublisher(left_to_world)
+    # right_static_publisher = StaticTfCamPublisher(right_to_left)
+
+    rclpy.spin(left_static_publisher)
+    # rclpy.spin(right_static_publisher)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)
-    static_publisher.destroy_node()
+    left_static_publisher.destroy_node()
+    # right_static_publisher.destroy_node()
     rclpy.shutdown()
 
 
